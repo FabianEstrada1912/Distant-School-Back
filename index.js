@@ -1,8 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-
 const app = express();
 const http = require('http').createServer(app);
+const path = require('path');
+const multer = require('multer');
+
+const conexion = require('./BD/conexion.js');
+const profile = require('./Profile/profile.js');
+const chats = require('./chat/chat.js');
+
+const pool  = conexion();
 
 const io = require('socket.io')(http, {
     cors: {
@@ -14,40 +21,20 @@ app.get('/', (req, res) => {
     res.send('Heello world');
 })
 
-let userList = new Map();
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
+    next();
+ });
 
-io.on('connection', (socket) => {
-    let userName = socket.handshake.query.userName;
-    addUser(userName, socket.id);
-    socket.broadcast.emit('user-list', [...userList.keys()]);
-    socket.emit('user-list', [...userList.keys()]);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/Archivo',express.static(path.join(__dirname,'/Archivo')));
 
-    socket.on('message', (msg) => {
-        socket.broadcast.emit('message-broadcast', {message: msg, userName: userName});
-    })
-
-    socket.on('disconnect', (reason) => {
-        console.log(socket.id," dd ",socket.handshake.query.userName)
-        removeUser(socket.handshake.query.userName, socket.id);
-    })
-});
-
-function addUser(userName, id) {
-    if (!userList.has(userName)) {
-        userList.set(userName, new Set(id));
-    } else {
-        userList.get(userName).add(id);
-    }
-}
-
-function removeUser(userName, id) {
-    if (userList.has(userName)) {
-        let userIds = userList.get(userName);
-        if (userIds.size == 0) {
-            userList.delete(userName);
-        }
-    }
-}
+profile(app,pool);
+chats(app,pool,io);
 
 http.listen(process.env.PORT || 3000, () => {
     console.log(`Server is running ${process.env.PORT || 3000}`);
