@@ -1,40 +1,22 @@
 
 
-function chat(app,pool,io){
-    
-    let userList = new Map();
-    
-    io.on('connection', (socket) => {
-        let userName = socket.handshake.query.userName;
-        let friends = socket.handshake.query.friends;
-        addUser(userName,friends,socket.id);
-        socket.broadcast.emit('user-list', [...userList.keys()]);
-        socket.emit('user-list', [...userList.keys()]);
-    
-        socket.on('message', (msg) => {
-            socket.broadcast.emit('message-broadcast', {message: msg, userName: userName,friends:friends});
+function chat(app,pool,ion){
+    var users = [];
+
+    ion.on("connection",function(socket){
+        console.log("user conncected ",socket.id)
+        socket.on("user_connect",function(username){
+            users[username]= socket.id;
+            ion.emit("user_connected",username)
+            console.log("user conncected ",username)
         })
-    
-        socket.on('disconnect', (reason) => {
-            removeUser(socket.handshake.query.userName, socket.handshake.query.friends, socket.id);
+
+        socket.on("send_message",function(data){
+          var socketID = users[data.receiver];
+          console.log(socketID)
+          ion.to(socketID).emit("new_message",data)
         })
-    });
-    
-    function addUser(userName,friends,id) {
-        if (!userList.has(userName)) {
-            userList.set(userName, new Set(id,friends));
-        } else {
-            userList.get(userName).add(id,friends);
-        }
-    }
-    
-    function removeUser(userName,friends,id) {
-        if (userList.has(userName)) {
-            let userIds = userList.get(userName);
-            if (userIds.size == 0) {
-                userList.delete(userName);
-            }
-        }
-    }
+    })
 }
+
 module.exports = chat;
