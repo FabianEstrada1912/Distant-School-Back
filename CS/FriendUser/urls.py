@@ -7,4 +7,5 @@ from FriendUser import views
 urlpatterns = [
     re_path(r'Friends/',views.Frieds.as_view()),
     re_path(r'Friend/(?P<id>\d+)/$',views.FriendVist.as_view()),
+    re_path(r'Agregar/(?P<id>\d+)/$',views.AgregarVist.as_view()),
 ]

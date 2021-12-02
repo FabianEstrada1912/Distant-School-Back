@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'Profile',
     'FriendUser',
     'GrupoChat',
+    'Conver',
+    'ListaChat',
+    'Conversacion',
     'corsheaders',
 ]
 

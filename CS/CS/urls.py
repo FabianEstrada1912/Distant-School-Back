@@ -28,7 +28,11 @@ urlpatterns = [
     re_path(r'^',include(router.urls)),
     re_path(r'^Profile/',include('Profile.urls')),
     re_path(r'^Login/',include('Login.urls')),
+    re_path(r'^Grupo/',include('GrupoChat.urls')),
+    re_path(r'^ListaGrupo/',include('ListaChat.urls')),
     re_path(r'^Friend/',include('FriendUser.urls')),
+    re_path(r'^Conversacion',include('Conversacion.urls')),
+    re_path(r'^Con',include('Conver.urls')),
     re_path(r'^Search/',include('Search.urls')),
     url('Api/',schema_view),
 ]

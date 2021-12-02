@@ -84,31 +84,36 @@ class FriendVist(APIView):
                 for i in consulta:
                     for j in consultaProfile:
                         lista.append({'id':i[0],'username':i[1],'first_name':i[2],'last_name':i[3],'photo':j[3],'idF':ids})
-            
-
         return lista
     
     def put(self,request,id,format=None):
+
+        idFriend = request.data['idFriends']
+        #idsU = self.busquedaFriend(idFriend)
         idUser = self.busquedaUsuario(id)
         if idUser == 404:
             return Response("usuario no encontrado")
         else: 
-            idFriend = request.data['idFriends']
-            cursor = connection.cursor()
             
-            cursor.execute('SELECT id,user_id,"idFriends","check" '+ 
-                'FROM "Friend" WHERE user_id = %s and "idFriends" = %s ',[id,str(idFriend)])  
-
+            idU = request.data['id']
+            check = request.data['check']
+            cursor = connection.cursor()
+            cursor.execute('UPDATE "Friend" SET "check"= %s  WHERE id=%s and user_id=%s and "idFriends"=%s',[str(check),int(idU),int(id),str(idFriend)])
+            cursor.execute('SELECT user_id,"idFriends", "check" '+
+                'FROM "Friend" WHERE user_id = %s or "check" = %s ',[id,str(request.data['check'])] )  
             consulta = cursor.fetchall()
             if consulta:
                 idList = 0
+                cursor.execute('SELECT id,user_id,"idFriends", "check" '+
+                'FROM "Friend" WHERE user_id = %s and "idFriends"= %s ',[idFriend,str(id)])  
+                consulta = cursor.fetchall()
                 for i in consulta:
                     idList = i[0]
                 
-                cursor.execute('UPDATE "Friend" SET "idFriends" = %s,"check"= %s  WHERE id=%s',[request.data['idFriends'],request.data['check'],int(idList) ])
+                cursor.execute('UPDATE "Friend" SET "check"= %s  WHERE id=%s and user_id=%s and "idFriends"=%s',[str(check),int(idList),int(idFriend),str(id)])
+                cursor.execute('SELECT id,user_id,"idFriends", "check" '+
+                'FROM "Friend" WHERE user_id = %s and "idFriends" = %s ',[idFriend,str(id)])  
                 
-                cursor.execute('SELECT user_id,"idFriends", "check" '+
-                'FROM "Friend" WHERE user_id = %s or "check" = %s ',[idList,str(request.data['check'])])  
                 consulta = cursor.fetchall()
                 if consulta:
                     print(":)")
@@ -136,3 +141,46 @@ class FriendVist(APIView):
             else:
                 print(":(")
                 return Response("ya se pudo eliminar")
+                    
+class AgregarVist(APIView):
+
+    def busquedaUsuario(self,id):
+        try:
+            return User.objects.get(pk=id)
+        except User.DoesNotExist:
+            return 404
+    
+    def post(self,request,id,format=None):
+        idFriends = request.data['idFriends']
+        print(idFriends)
+        idF = self.busquedaUsuario(idFriends)
+        idUser = self.busquedaUsuario(id)
+        if idUser == 404 and idF == 404:
+            return Response("usuario no encontrado")
+        else: 
+            userFrined = {
+              'user': id,
+              'idFriends':idFriends,
+              'check': 4
+            }
+
+            users= {
+              'user': idFriends,
+              'idFriends':id,
+              'check': request.data['check']
+            }
+
+            serializer = FriendsEditSerializer(data = userFrined)
+            if serializer.is_valid():
+                print("yupi")
+                user = serializer.save()
+                serializerFrie= FriendsEditSerializer(data = users)
+                if serializerFrie.is_valid():
+                    serializerFrie.save()
+                    print(":)")
+                    return Response ("se creo el usuario")
+                else :
+                    print(":(")
+                    return Response ("no se creo el usuario :(")
+            else :
+                return Response ("no se creo el usuario :(")
