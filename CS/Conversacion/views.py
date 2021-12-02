@@ -16,8 +16,11 @@ class Conversacion(APIView):
     def post(self,request,format=None):
         seria = ConSerializer(data=request.data)
         if seria.is_valid():
-            print("dd")
-        return Response("no se creo")
+            seria.save()
+            dato= seria.data
+            return Response(dato)
+        else:
+            return Response("no se creo")
 
 class ConversacionVer(APIView):
     def get(self,request,id,idU,format=None):
